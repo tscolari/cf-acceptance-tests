@@ -13,95 +13,191 @@ import (
 var _ = Describe("SSO Lifecycle", func() {
 	var broker ServiceBroker
 	var config OAuthConfig
+	var redirectUri string
 	var apiEndpoint = helpers.LoadConfig().ApiEndpoint
 
-	redirectUri := `http://example.com`
+	Describe("For service BROKERs", func() {
 
-	BeforeEach(func() {
-		broker = NewServiceBroker(generator.RandomName(), assets.NewAssets().ServiceBroker, context)
-		broker.Push()
-		broker.Service.DashboardClient.RedirectUri = redirectUri
-		broker.Configure()
+		Context("When a service broker is created with a dashboard client", func() {
 
-		config = OAuthConfig{}
-		config.ClientId = broker.Service.DashboardClient.ID
-		config.ClientSecret = broker.Service.DashboardClient.Secret
-		config.RedirectUri = redirectUri
-		config.RequestedScopes = `openid,cloud_controller_service_permissions.read`
+			BeforeEach(func() {
+				redirectUri = `http://example.com`
 
-		SetOauthEndpoints(apiEndpoint, &config)
+				broker = NewServiceBroker(generator.RandomName(), assets.NewAssets().ServiceBroker, context, true)
+				broker.Push()
+				broker.Service.DashboardClient.RedirectUri = redirectUri
+				broker.Configure()
 
-		broker.Create()
-	})
+				config = OAuthConfig{}
+				config.ClientId = broker.Service.DashboardClient.ID
+				config.ClientSecret = broker.Service.DashboardClient.Secret
+				config.RedirectUri = redirectUri
+				config.RequestedScopes = `openid,cloud_controller_service_permissions.read`
 
-	AfterEach(func() {
-		broker.Destroy()
-	})
+				SetOauthEndpoints(apiEndpoint, &config)
 
-	Context("When a service broker is created with a dashboard client", func() {
+				broker.Create()
+			})
 
-		It("can perform an operation on a user's behalf using sso", func() {
-			//create a service instance
-			broker.PublicizePlans()
-			serviceInstanceGuid := broker.CreateServiceInstance(generator.RandomName())
+			AfterEach(func() {
+				broker.Destroy()
+			})
 
-			// perform the OAuth lifecycle to obtain an access token
-			userSessionCookie := AuthenticateUser(config.AuthorizationEndpoint, context.RegularUserContext().Username, context.RegularUserContext().Password)
+			It("can perform an operation on a user's behalf using sso", func() {
+				//create a service instance
+				broker.PublicizePlans()
+				serviceInstanceGuid := broker.CreateServiceInstance(generator.RandomName())
 
-			authCode, _ := RequestScopes(userSessionCookie, config)
-			Expect(authCode).ToNot(BeNil(), `Failed to request and authorize scopes.`)
+				// perform the OAuth lifecycle to obtain an access token
+				userSessionCookie := AuthenticateUser(config.AuthorizationEndpoint, context.RegularUserContext().Username, context.RegularUserContext().Password)
 
-			accessToken := GetAccessToken(authCode, config)
-			Expect(accessToken).ToNot(BeNil(), `Failed to obtain an access token.`)
+				authCode, _ := RequestScopes(userSessionCookie, config)
+				Expect(authCode).ToNot(BeNil(), `Failed to request and authorize scopes.`)
 
-			// use the access token to perform an operation on the user's behalf
-			canManage, httpCode := QueryServiceInstancePermissionEndpoint(apiEndpoint, accessToken, serviceInstanceGuid)
+				accessToken := GetAccessToken(authCode, config)
+				Expect(accessToken).ToNot(BeNil(), `Failed to obtain an access token.`)
 
-			Expect(httpCode).To(Equal(`200`), `The provided access token was not valid.`)
-			Expect(canManage).To(Equal(`true`))
+				// use the access token to perform an operation on the user's behalf
+				canManage, httpCode := QueryServiceInstancePermissionEndpoint(apiEndpoint, accessToken, serviceInstanceGuid)
+
+				Expect(httpCode).To(Equal(`200`), `The provided access token was not valid.`)
+				Expect(canManage).To(Equal(`true`))
+			})
+		})
+
+		Context("When a service broker is updated with a new dashboard client", func() {
+			It("can perform an operation on a user's behalf using sso", func() {
+				config.ClientId = generator.RandomName()
+				broker.Service.DashboardClient.ID = config.ClientId
+				broker.Configure()
+
+				broker.Update()
+
+				//create a service instance
+				broker.PublicizePlans()
+				serviceInstanceGuid := broker.CreateServiceInstance(generator.RandomName())
+
+				// perform the OAuth lifecycle to obtain an access token
+				userSessionCookie := AuthenticateUser(config.AuthorizationEndpoint, context.RegularUserContext().Username, context.RegularUserContext().Password)
+
+				authCode, _ := RequestScopes(userSessionCookie, config)
+				Expect(authCode).ToNot(BeNil(), `Failed to request and authorize scopes.`)
+
+				accessToken := GetAccessToken(authCode, config)
+				Expect(accessToken).ToNot(BeNil(), `Failed to obtain an access token.`)
+
+				// use the access token to perform an operation on the user's behalf
+				canManage, httpCode := QueryServiceInstancePermissionEndpoint(apiEndpoint, accessToken, serviceInstanceGuid)
+
+				Expect(httpCode).To(Equal(`200`), `The provided access token was not valid.`)
+				Expect(canManage).To(Equal(`true`))
+			})
+		})
+
+		Context("When a service broker is deleted", func() {
+			It("can no longer perform an operation on a user's behalf using sso", func() {
+				broker.Delete()
+
+				// perform the OAuth lifecycle to obtain an access token
+				userSessionCookie := AuthenticateUser(config.AuthorizationEndpoint, context.RegularUserContext().Username, context.RegularUserContext().Password)
+
+				_, httpCode := RequestScopes(userSessionCookie, config)
+
+				// there should not be a client in uaa anymore, so the request for scopes should return an unauthorized
+				Expect(httpCode).To(Equal(`401`))
+			})
 		})
 	})
 
-	Context("When a service broker is updated with a new dashboard client", func() {
-		It("can perform an operation on a user's behalf using sso", func() {
-			config.ClientId = generator.RandomName()
-			broker.Service.DashboardClient.ID = config.ClientId
+	Describe("For service INSTANCEs", func() {
+		BeforeEach(func() {
+			redirectUri := `https://dashboard.service-instance.bike`
+
+			broker = NewServiceBroker(generator.RandomName(), assets.NewAssets().ServiceBroker, context, false)
+			broker.Push()
+			broker.Service.DashboardClient.RedirectUri = redirectUri
 			broker.Configure()
 
-			broker.Update()
+			config = OAuthConfig{}
+			config.ClientId = broker.SsoPlans[0].DashboardClient.ID
+			config.ClientSecret = broker.SsoPlans[0].DashboardClient.Secret
+			config.RedirectUri = redirectUri
+			config.RequestedScopes = `openid,cloud_controller_service_permissions.read`
 
-			//create a service instance
-			broker.PublicizePlans()
-			serviceInstanceGuid := broker.CreateServiceInstance(generator.RandomName())
+			SetOauthEndpoints(apiEndpoint, &config)
 
-			// perform the OAuth lifecycle to obtain an access token
-			userSessionCookie := AuthenticateUser(config.AuthorizationEndpoint, context.RegularUserContext().Username, context.RegularUserContext().Password)
-
-			authCode, _ := RequestScopes(userSessionCookie, config)
-			Expect(authCode).ToNot(BeNil(), `Failed to request and authorize scopes.`)
-
-			accessToken := GetAccessToken(authCode, config)
-			Expect(accessToken).ToNot(BeNil(), `Failed to obtain an access token.`)
-
-			// use the access token to perform an operation on the user's behalf
-			canManage, httpCode := QueryServiceInstancePermissionEndpoint(apiEndpoint, accessToken, serviceInstanceGuid)
-
-			Expect(httpCode).To(Equal(`200`), `The provided access token was not valid.`)
-			Expect(canManage).To(Equal(`true`))
+			broker.Create()
 		})
-	})
 
-	Context("When a service broker is deleted", func() {
-		It("can no longer perform an operation on a user's behalf using sso", func() {
-			broker.Delete()
+		AfterEach(func() {
+			broker.Destroy()
+		})
 
-			// perform the OAuth lifecycle to obtain an access token
-			userSessionCookie := AuthenticateUser(config.AuthorizationEndpoint, context.RegularUserContext().Username, context.RegularUserContext().Password)
+		Context("When a service INSTANCE is created with a dashboard client", func() {
 
-			_, httpCode := RequestScopes(userSessionCookie, config)
+			It("can perform an operation on a user's behalf using sso", func() {
+				//create a service instance
+				broker.PublicizePlans()
+				serviceInstanceGuid := broker.CreateServiceInstance(generator.RandomName())
 
-			// there should not be a client in uaa anymore, so the request for scopes should return an unauthorized
-			Expect(httpCode).To(Equal(`401`))
+				// perform the OAuth lifecycle to obtain an access token
+				userSessionCookie := AuthenticateUser(config.AuthorizationEndpoint, context.RegularUserContext().Username, context.RegularUserContext().Password)
+
+				authCode, _ := RequestScopes(userSessionCookie, config)
+				Expect(authCode).ToNot(BeNil(), `Failed to request and authorize scopes.`)
+
+				accessToken := GetAccessToken(authCode, config)
+				Expect(accessToken).ToNot(BeNil(), `Failed to obtain an access token.`)
+
+				// use the access token to perform an operation on the user's behalf
+				canManage, httpCode := QueryServiceInstancePermissionEndpoint(apiEndpoint, accessToken, serviceInstanceGuid)
+
+				Expect(httpCode).To(Equal(`200`), `The provided access token was not valid.`)
+				Expect(canManage).To(Equal(`true`))
+			})
+		})
+
+		Context("When a service broker is updated with a new dashboard client", func() {
+			It("can perform an operation on a user's behalf using sso", func() {
+				config.ClientId = generator.RandomName()
+				broker.Service.DashboardClient.ID = config.ClientId
+				broker.Configure()
+
+				broker.Update()
+
+				//create a service instance
+				broker.PublicizePlans()
+				serviceInstanceGuid := broker.CreateServiceInstance(generator.RandomName())
+
+				// perform the OAuth lifecycle to obtain an access token
+				userSessionCookie := AuthenticateUser(config.AuthorizationEndpoint, context.RegularUserContext().Username, context.RegularUserContext().Password)
+
+				authCode, _ := RequestScopes(userSessionCookie, config)
+				Expect(authCode).ToNot(BeNil(), `Failed to request and authorize scopes.`)
+
+				accessToken := GetAccessToken(authCode, config)
+				Expect(accessToken).ToNot(BeNil(), `Failed to obtain an access token.`)
+
+				// use the access token to perform an operation on the user's behalf
+				canManage, httpCode := QueryServiceInstancePermissionEndpoint(apiEndpoint, accessToken, serviceInstanceGuid)
+
+				Expect(httpCode).To(Equal(`200`), `The provided access token was not valid.`)
+				Expect(canManage).To(Equal(`true`))
+			})
+		})
+
+		Context("When a service broker is deleted", func() {
+			It("can no longer perform an operation on a user's behalf using sso", func() {
+				broker.Delete()
+
+				// perform the OAuth lifecycle to obtain an access token
+				userSessionCookie := AuthenticateUser(config.AuthorizationEndpoint, context.RegularUserContext().Username, context.RegularUserContext().Password)
+
+				_, httpCode := RequestScopes(userSessionCookie, config)
+
+				// there should not be a client in uaa anymore, so the request for scopes should return an unauthorized
+				Expect(httpCode).To(Equal(`401`))
+			})
 		})
 	})
 })

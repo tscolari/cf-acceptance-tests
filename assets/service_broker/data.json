@@ -112,7 +112,13 @@
       "default": {
         "sleep_seconds": 0,
         "status": 200,
-        "body": {}
+        "body": {
+          "dashboard_client": {
+              "id": "greg-client-id",
+              "secret": "greg-secret",
+              "redirect_uri": "http://www.purple.com/"
+          }
+        }
       }
     },
     "fetch": {

@@ -26,7 +26,7 @@
               },
               "displayName": "The Fake Broker"
             },
-            "dashboard_client": {
+            "<dashboard-client-key>": {
               "id": "<sso-test>",
               "secret": "<sso-secret>",
               "redirect_uri": "http://example.com"
@@ -117,6 +117,17 @@
         "sleep_seconds": 0,
         "status": 202,
         "body": {
+        }
+      },
+      "<fake-sso-plan>": {
+        "sleep_seconds": 0,
+        "status": 202,
+        "body": {
+          "dashboard_client": {
+              "id": "<sso-plan-client-id>",
+              "secret": "<sso-plan-secret>",
+              "redirect_uri": "https://dashboard.service-instance.bike"
+          }
         }
       },
       "default": {

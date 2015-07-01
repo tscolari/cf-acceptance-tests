@@ -22,7 +22,7 @@ var _ = Describe("Service Broker Lifecycle", func() {
 	var oldPlanName string
 
 	BeforeEach(func() {
-		broker = NewServiceBroker(generator.RandomName(), assets.NewAssets().ServiceBroker, context)
+		broker = NewServiceBroker(generator.RandomName(), assets.NewAssets().ServiceBroker, context, true)
 		cf.TargetSpace(context.RegularUserContext(), context.ShortTimeout())
 		broker.Push()
 		broker.Configure()
