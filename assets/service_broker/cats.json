@@ -29,7 +29,7 @@
             "<dashboard-client-key>": {
               "id": "<sso-test>",
               "secret": "<sso-secret>",
-              "redirect_uri": "http://example.com"
+              "redirect_uri": "http://www.purple.com"
             },
             "plan_updateable": true,
             "plans": [
@@ -126,7 +126,7 @@
           "dashboard_client": {
               "id": "<sso-plan-client-id>",
               "secret": "<sso-plan-secret>",
-              "redirect_uri": "https://dashboard.service-instance.bike"
+              "redirect_uri": "http://www.purple.com"
           }
         }
       },
@@ -134,6 +134,11 @@
         "sleep_seconds": 0,
         "status": 200,
         "body": {
+           "dashboard_client": {
+              "id": "<sso-plan-client-id>",
+              "secret": "<sso-plan-secret>",
+              "redirect_uri": "http://www.purple.com"
+          },
           "dashboard_url": "http://example.com"
         }
       }

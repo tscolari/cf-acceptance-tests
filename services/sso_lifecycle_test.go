@@ -21,7 +21,7 @@ var _ = Describe("SSO Lifecycle", func() {
 		Context("When a service broker is created with a dashboard client", func() {
 
 			BeforeEach(func() {
-				redirectUri = `http://example.com`
+				redirectUri = `http://www.purple.com`
 
 				broker = NewServiceBroker(generator.RandomName(), assets.NewAssets().ServiceBroker, context, true)
 				broker.Push()
@@ -111,7 +111,7 @@ var _ = Describe("SSO Lifecycle", func() {
 
 	Describe("For service INSTANCEs", func() {
 		BeforeEach(func() {
-			redirectUri := `https://dashboard.service-instance.bike`
+			redirectUri := `http://www.purple.com`
 
 			broker = NewServiceBroker(generator.RandomName(), assets.NewAssets().ServiceBroker, context, false)
 			broker.Push()
