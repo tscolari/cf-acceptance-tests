@@ -19,6 +19,19 @@ func TestRouting(t *testing.T) {
 
 	rs := []Reporter{}
 
+	context := helpers.NewContext(config)
+	environment := helpers.NewEnvironment(context)
+
+	BeforeSuite(func() {
+		Expect(config.SystemDomain).ToNot(Equal(""), "Must provide a system domain for the routing suite")
+		Expect(config.ClientSecret).ToNot(Equal(""), "Must provide a client secret for the routing api suite")
+		environment.Setup()
+	})
+
+	AfterSuite(func() {
+		environment.Teardown()
+	})
+
 	if config.ArtifactsDirectory != "" {
 		helpers.EnableCFTrace(config, componentName)
 		rs = append(rs, helpers.NewJUnitReporter(config, componentName))
@@ -26,8 +39,3 @@ func TestRouting(t *testing.T) {
 
 	RunSpecsWithDefaultAndCustomReporters(t, componentName, rs)
 }
-
-var _ = BeforeSuite(func() {
-	Expect(config.SystemDomain).ToNot(Equal(""), "Must provide a system domain for the routing suite")
-	Expect(config.ClientSecret).ToNot(Equal(""), "Must provide a client secret for the routing api suite")
-})
