@@ -215,16 +215,6 @@ func (b ServiceBroker) HasPlan(planName string) bool {
 	return false
 }
 
-func (b ServiceBroker) CreateServiceInstance(instanceName string) string {
-	Expect(cf.Cf("create-service", b.Service.Name, b.SyncPlans[0].Name, instanceName).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
-	url := fmt.Sprintf("/v2/service_instances?q=name:%s", instanceName)
-	serviceInstance := ServiceInstanceResponse{}
-	curl := cf.Cf("curl", url).Wait(DEFAULT_TIMEOUT)
-	Expect(curl).To(Exit(0))
-	json.Unmarshal(curl.Out.Contents(), &serviceInstance)
-	return serviceInstance.Resources[0].Metadata.Guid
-}
-
 func (b ServiceBroker) GetSpaceGuid() string {
 	url := fmt.Sprintf("/v2/spaces?q=name%%3A%s", b.context.RegularUserContext().Space)
 	jsonResults := SpaceJson{}

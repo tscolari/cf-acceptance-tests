@@ -39,11 +39,9 @@ var _ = Describe("Purging service offerings", func() {
 			createApp := cf.Cf("push", appName, "-p", assets.NewAssets().Dora).Wait(CF_PUSH_TIMEOUT)
 			Expect(createApp).To(Exit(0), "failed creating app")
 
-			broker.CreateServiceInstance(instanceName)
-
-			services := cf.Cf("services").Wait(DEFAULT_TIMEOUT)
-			Expect(services).To(Exit(0))
-			Expect(services).To(Say(instanceName))
+			serviceInstanceCreate := cf.Cf("create-service", broker.Service.Name, broker.SyncPlans[0].Name, instanceName).Wait(DEFAULT_TIMEOUT)
+			Expect(serviceInstanceCreate).To(Exit(0))
+			Expect(serviceInstanceCreate).To(Say(instanceName))
 
 			bindService := cf.Cf("bind-service", appName, instanceName).Wait(DEFAULT_TIMEOUT)
 			Expect(bindService).To(Exit(0), "failed binding app to service")
