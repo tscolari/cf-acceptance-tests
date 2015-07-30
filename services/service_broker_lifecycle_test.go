@@ -39,7 +39,7 @@ var _ = Describe("Service Broker Lifecycle", func() {
 		Describe("Updating the catalog", func() {
 
 			BeforeEach(func() {
-				broker.PublicizePlans()
+				broker.EnableServiceAccess()
 			})
 
 			It("updates the broker and sees catalog changes", func() {

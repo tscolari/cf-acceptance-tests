@@ -199,27 +199,6 @@ func (b ServiceBroker) ToJSON() string {
 	return replacer.Replace(string(bytes))
 }
 
-func (b ServiceBroker) PublicizePlans() {
-	url := fmt.Sprintf("/v2/services?inline-relations-depth=1&q=label:%s", b.Service.Name)
-	var session *Session
-	cf.AsUser(b.context.AdminUserContext(), DEFAULT_TIMEOUT, func() {
-		session = cf.Cf("curl", url).Wait(DEFAULT_TIMEOUT)
-		Expect(session).To(Exit(0))
-	})
-	structure := ServicesResponse{}
-	json.Unmarshal(session.Out.Contents(), &structure)
-
-	for _, service := range structure.Resources {
-		if service.Entity.Label == b.Service.Name {
-			for _, plan := range service.Entity.ServicePlans {
-				if b.HasPlan(plan.Entity.Name) {
-					b.PublicizePlan(plan.Metadata.Url)
-				}
-			}
-		}
-	}
-}
-
 func (b ServiceBroker) EnableServiceAccess() {
 	cf.AsUser(b.context.AdminUserContext(), b.context.ShortTimeout(), func() {
 		session := cf.Cf("enable-service-access", b.Service.Name).Wait(DEFAULT_TIMEOUT)
@@ -234,15 +213,6 @@ func (b ServiceBroker) HasPlan(planName string) bool {
 		}
 	}
 	return false
-}
-
-func (b ServiceBroker) PublicizePlan(url string) {
-	jsonMap := make(map[string]bool)
-	jsonMap["public"] = true
-	planJson, _ := json.Marshal(jsonMap)
-	cf.AsUser(b.context.AdminUserContext(), DEFAULT_TIMEOUT, func() {
-		Expect(cf.Cf("curl", url, "-X", "PUT", "-d", string(planJson)).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
-	})
 }
 
 func (b ServiceBroker) CreateServiceInstance(instanceName string) string {

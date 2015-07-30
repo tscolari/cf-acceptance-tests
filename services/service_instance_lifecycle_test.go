@@ -61,7 +61,7 @@ var _ = Describe("Service Instance Lifecycle", func() {
 			broker.Push()
 			broker.Configure()
 			broker.Create()
-			broker.PublicizePlans()
+			broker.EnableServiceAccess()
 		})
 
 		AfterEach(func() {
@@ -264,7 +264,7 @@ var _ = Describe("Service Instance Lifecycle", func() {
 			broker.Push()
 			broker.Configure()
 			broker.Create()
-			broker.PublicizePlans()
+			broker.EnableServiceAccess()
 		})
 
 		AfterEach(func() {

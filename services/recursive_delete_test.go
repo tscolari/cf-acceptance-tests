@@ -23,7 +23,7 @@ var _ = Describe("Recursive Delete", func() {
 		broker.Push()
 		broker.Configure()
 		broker.Create()
-		broker.PublicizePlans()
+		broker.EnableServiceAccess()
 
 		orgName = generator.RandomName()
 		quotaName = generator.RandomName() + "-recursive-delete"

@@ -21,7 +21,7 @@ var _ = Describe("Purging service offerings", func() {
 		broker.Configure()
 		cf.AsUser(context.AdminUserContext(), DEFAULT_TIMEOUT, func() {
 			broker.Create()
-			broker.PublicizePlans()
+			broker.EnableServiceAccess()
 		})
 	})
 

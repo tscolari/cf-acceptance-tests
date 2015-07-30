@@ -48,7 +48,7 @@ var _ = Describe("SSO Lifecycle", func() {
 		Context("When a service broker is created with a service dashboard client", func() {
 			It("can perform an operation on a user's behalf using sso", func() {
 				//create a service instance
-				broker.PublicizePlans()
+				broker.EnableServiceAccess()
 				serviceInstanceGuid := broker.CreateServiceInstance(generator.RandomName())
 
 				// perform the OAuth lifecycle to obtain an access token
@@ -77,7 +77,7 @@ var _ = Describe("SSO Lifecycle", func() {
 				broker.Update()
 
 				//create a service instance
-				broker.PublicizePlans()
+				broker.EnableServiceAccess()
 				serviceInstanceGuid := broker.CreateServiceInstance(generator.RandomName())
 
 				// perform the OAuth lifecycle to obtain an access token
