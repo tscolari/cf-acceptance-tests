@@ -42,7 +42,11 @@ func PushApp(asset string) string {
 }
 
 func ScaleAppInstances(appName string, instances int) {
-	Expect(cf.Cf("scale", appName, "-i", strconv.Itoa(instances), "-f").Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+	Expect(cf.Cf("scale", appName, "-i", strconv.Itoa(instances)).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+	Eventually(func() string {
+		return string(cf.Cf("app", appName).Wait(DEFAULT_TIMEOUT).Out.Contents())
+	}, DEFAULT_TIMEOUT*2, 2*time.Second).
+		Should(ContainSubstring(fmt.Sprintf("instances: %d/%d", instances, instances)))
 }
 
 func DeleteApp(appName string) {
