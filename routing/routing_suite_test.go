@@ -173,16 +173,21 @@ func TestRouting(t *testing.T) {
 	context := helpers.NewContext(config)
 	environment := helpers.NewEnvironment(context)
 
-	BeforeSuite(func() {
+	SynchronizedBeforeSuite(func() []byte {
 		Expect(config.SystemDomain).ToNot(Equal(""), "Must provide a system domain for the routing suite")
 		Expect(config.ClientSecret).ToNot(Equal(""), "Must provide a client secret for the routing suite")
 		environment.Setup()
 
 		brokerName, brokerAppName = createServiceBroker()
 		serviceInstanceName = createServiceInstance()
+		return []byte(fmt.Sprintf("%s|||%s", brokerAppName, serviceInstanceName))
+	}, func(data []byte) {
+		dataSlice := strings.Split(string(data), "|||")
+		brokerAppName = dataSlice[0]
+		serviceInstanceName = dataSlice[1]
 	})
 
-	AfterSuite(func() {
+	SynchronizedAfterSuite(func() {}, func() {
 		environment.Teardown()
 
 		cf.AsUser(context.AdminUserContext(), context.ShortTimeout(), func() {
