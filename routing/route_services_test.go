@@ -17,6 +17,22 @@ import (
 
 var _ = Describe("Route Services", func() {
 	Context("when a route binds a service", func() {
+		var serviceInstanceName string
+		BeforeEach(func() {
+			serviceInstanceName = createServiceInstance()
+		})
+
+		AfterEach(func() {
+			guid := getServiceInstanceGuid(serviceInstanceName)
+			Eventually(func() string {
+				response := cf.Cf("curl", fmt.Sprintf("/v2/service_instances/%s", guid), "-X", "DELETE")
+				Expect(response.Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+
+				contents := response.Out.Contents()
+				return string(contents)
+			}, DEFAULT_TIMEOUT, "1s").Should(ContainSubstring("CF-ServiceInstanceNotFound"))
+		})
+
 		Context("when service broker does not return a route service url", func() {
 			var (
 				appName     string
@@ -33,6 +49,21 @@ var _ = Describe("Route Services", func() {
 
 				bindRouteToService(appName, serviceInstanceName)
 				RestartApp(appName)
+			})
+
+			AfterEach(func() {
+				route_guid := getRouteGuid(appName)
+				guid := getServiceInstanceGuid(serviceInstanceName)
+				cf.Cf("curl", fmt.Sprintf("/v2/service_instances/%s/routes/%s", guid, route_guid), "-X", "DELETE")
+
+				Eventually(func() string {
+					response := cf.Cf("curl", fmt.Sprintf("/v2/routes/%s", route_guid))
+					Expect(response.Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+
+					contents := response.Out.Contents()
+					return string(contents)
+				}, DEFAULT_TIMEOUT, "1s").Should(ContainSubstring(`"service_instance_guid": null`))
+
 			})
 
 			It("routes to an app", func() {

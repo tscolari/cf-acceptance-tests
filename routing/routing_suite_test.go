@@ -156,9 +156,8 @@ const (
 var config helpers.Config
 
 var (
-	brokerName          string
-	brokerAppName       string
-	serviceInstanceName string
+	brokerName    string
+	brokerAppName string
 )
 
 func TestRouting(t *testing.T) {
@@ -173,23 +172,25 @@ func TestRouting(t *testing.T) {
 	context := helpers.NewContext(config)
 	environment := helpers.NewEnvironment(context)
 
+	brokerContext := helpers.NewContext(config)
+	brokerEnvironment := helpers.NewEnvironment(brokerContext)
+
 	SynchronizedBeforeSuite(func() []byte {
 		Expect(config.SystemDomain).ToNot(Equal(""), "Must provide a system domain for the routing suite")
 		Expect(config.ClientSecret).ToNot(Equal(""), "Must provide a client secret for the routing suite")
-		environment.Setup()
 
+		brokerEnvironment.Setup()
 		brokerName, brokerAppName = createServiceBroker()
-		serviceInstanceName = createServiceInstance()
-		return []byte(fmt.Sprintf("%s|||%s", brokerAppName, serviceInstanceName))
+		return []byte(brokerAppName)
 	}, func(data []byte) {
-		dataSlice := strings.Split(string(data), "|||")
-		brokerAppName = dataSlice[0]
-		serviceInstanceName = dataSlice[1]
+		environment.Setup()
+		brokerAppName = string(data)
 	})
 
-	SynchronizedAfterSuite(func() {}, func() {
+	SynchronizedAfterSuite(func() {
 		environment.Teardown()
-
+	}, func() {
+		brokerEnvironment.Teardown()
 		cf.AsUser(context.AdminUserContext(), context.ShortTimeout(), func() {
 			responseBuffer := cf.Cf("delete-service-broker", brokerName, "-f")
 			Expect(responseBuffer.Wait(DEFAULT_TIMEOUT)).To(Exit(0))
