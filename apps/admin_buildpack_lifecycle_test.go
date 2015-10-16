@@ -30,6 +30,11 @@ var _ = Describe("Admin Buildpacks", func() {
 		return fmt.Sprintf("simple-buildpack-please-match-%s", appName)
 	}
 
+	createAppFile := func() {
+		_, err := os.Create(path.Join(appPath, matchingFilename(appName)))
+		Expect(err).ToNot(HaveOccurred())
+	}
+
 	BeforeEach(func() {
 		AsUser(context.AdminUserContext(), DEFAULT_TIMEOUT, func() {
 			BuildpackName = RandomName()
@@ -86,9 +91,6 @@ EOF
 				},
 			})
 
-			_, err = os.Create(path.Join(appPath, matchingFilename(appName)))
-			Expect(err).ToNot(HaveOccurred())
-
 			_, err = os.Create(path.Join(appPath, "some-file"))
 			Expect(err).ToNot(HaveOccurred())
 
@@ -108,6 +110,10 @@ EOF
 	})
 
 	Context("when the buildpack is detected", func() {
+		BeforeEach(func() {
+			createAppFile()
+		})
+
 		It("is used for the app", func() {
 			push := Cf("push", appName, "-p", appPath).Wait(CF_PUSH_TIMEOUT)
 			Expect(push).To(Exit(0))
@@ -116,11 +122,6 @@ EOF
 	})
 
 	Context("when the buildpack fails to detect", func() {
-		BeforeEach(func() {
-			err := os.Remove(path.Join(appPath, matchingFilename(appName)))
-			Expect(err).ToNot(HaveOccurred())
-		})
-
 		It("fails to stage", func() {
 			push := Cf("push", appName, "-p", appPath).Wait(CF_PUSH_TIMEOUT)
 			Expect(push).To(Exit(1))
@@ -130,6 +131,7 @@ EOF
 
 	Context("when the buildpack is deleted", func() {
 		BeforeEach(func() {
+			createAppFile()
 			AsUser(context.AdminUserContext(), DEFAULT_TIMEOUT, func() {
 				Expect(Cf("delete-buildpack", BuildpackName, "-f").Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 			})
@@ -144,6 +146,8 @@ EOF
 
 	Context("when the buildpack is disabled", func() {
 		BeforeEach(func() {
+			createAppFile()
+
 			AsUser(context.AdminUserContext(), DEFAULT_TIMEOUT, func() {
 				var response QueryResponse
 
