@@ -15,9 +15,12 @@ import (
 )
 
 var _ = Describe("Recursive Delete", func() {
-	var broker ServiceBroker
-	var orgName string
-	var quotaName string
+	var (
+		broker    ServiceBroker
+		orgName   string
+		quotaName string
+		appName   string
+	)
 
 	BeforeEach(func() {
 		broker = NewServiceBroker(generator.RandomName(), assets.NewAssets().ServiceBroker, context)
@@ -26,11 +29,11 @@ var _ = Describe("Recursive Delete", func() {
 		broker.Create()
 		broker.PublicizePlans()
 
-		orgName = generator.RandomName()
-		quotaName = generator.RandomName() + "-recursive-delete"
-		spaceName := generator.RandomName()
-		appName := generator.RandomName()
-		instanceName := generator.RandomName()
+		orgName = generator.RandomName() + "-recursive-del"
+		quotaName = generator.RandomName() + "-recursive-del"
+		spaceName := generator.RandomName() + "-recursive-del"
+		appName = generator.RandomName() + "-recursive-del"
+		instanceName := generator.RandomName() + "-recursive-del"
 
 		cf.AsUser(context.AdminUserContext(), DEFAULT_TIMEOUT, func() {
 
@@ -71,5 +74,6 @@ var _ = Describe("Recursive Delete", func() {
 		})
 		getOrg := cf.Cf("org", orgName).Wait(DEFAULT_TIMEOUT)
 		Expect(getOrg).To(Exit(1), "org still exists")
+		Expect(cf.Cf("app", appName).Wait(CF_PUSH_TIMEOUT)).To(Exit(1))
 	})
 })

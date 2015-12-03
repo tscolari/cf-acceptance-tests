@@ -265,7 +265,6 @@ var _ = Describe("Service Instance Lifecycle", func() {
 					})
 				})
 			})
-
 		})
 	})
 
@@ -378,6 +377,11 @@ var _ = Describe("Service Instance Lifecycle", func() {
 					Expect(createApp).To(Exit(0), "failed creating app")
 					app_helpers.SetBackend(appName)
 					Expect(cf.Cf("start", appName).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+				})
+
+				AfterEach(func() {
+					app_helpers.AppReport(appName, DEFAULT_TIMEOUT)
+					Expect(cf.Cf("delete", appName, "-f", "-r").Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
 				})
 
 				It("can bind a service instance", func() {

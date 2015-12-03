@@ -22,10 +22,12 @@ var _ = Describe("Service Broker Lifecycle", func() {
 	var broker ServiceBroker
 
 	Describe("public brokers", func() {
-		var acls *Session
-		var output []byte
-		var oldServiceName string
-		var oldPlanName string
+		var (
+			acls           *Session
+			output         []byte
+			oldServiceName string
+			oldPlanName    string
+		)
 
 		BeforeEach(func() {
 			broker = NewServiceBroker(generator.RandomName(), assets.NewAssets().ServiceBroker, context)
@@ -38,8 +40,13 @@ var _ = Describe("Service Broker Lifecycle", func() {
 			})
 		})
 
-		Describe("Updating the catalog", func() {
+		AfterEach(func() {
+			app_helpers.AppReport(broker.Name, DEFAULT_TIMEOUT)
 
+			broker.Destroy()
+		})
+
+		Describe("Updating the catalog", func() {
 			BeforeEach(func() {
 				broker.PublicizePlans()
 			})
@@ -135,7 +142,6 @@ var _ = Describe("Service Broker Lifecycle", func() {
 			})
 
 			Describe("disabling", func() {
-
 				BeforeEach(func() {
 					cf.AsUser(context.AdminUserContext(), context.ShortTimeout(), func() {
 						commandResult := cf.Cf("enable-service-access", broker.Service.Name, "-p", globallyPublicPlan.Name).Wait(DEFAULT_TIMEOUT)
@@ -180,12 +186,6 @@ var _ = Describe("Service Broker Lifecycle", func() {
 				})
 			})
 		})
-
-		AfterEach(func() {
-			app_helpers.AppReport(broker.Name, DEFAULT_TIMEOUT)
-
-			broker.Destroy()
-		})
 	})
 
 	Describe("private brokers", func() {
@@ -197,7 +197,7 @@ var _ = Describe("Service Broker Lifecycle", func() {
 		})
 
 		AfterEach(func() {
-			broker.Delete()
+			broker.Destroy()
 		})
 
 		It("can be created and viewed (in list) by SpaceDevelopers", func() {

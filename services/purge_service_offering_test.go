@@ -33,7 +33,11 @@ var _ = Describe("Purging service offerings", func() {
 	})
 
 	Context("when there are several existing service entities", func() {
-		var appName, instanceName, asyncInstanceName string
+		var (
+			appName           string
+			instanceName      string
+			asyncInstanceName string
+		)
 
 		BeforeEach(func() {
 			appName = generator.PrefixedRandomName("CATS-APP-")
@@ -58,6 +62,12 @@ var _ = Describe("Purging service offerings", func() {
 			Expect(cf.Cf("service", asyncInstanceName).Wait(DEFAULT_TIMEOUT)).To(Say("create in progress"))
 		})
 
+		AfterEach(func() {
+			app_helpers.AppReport(appName, DEFAULT_TIMEOUT)
+
+			Expect(cf.Cf("delete", appName, "-f", "-r").Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+		})
+
 		It("removes all instances and plans of the service, then removes the service offering", func() {
 			marketplace := cf.Cf("marketplace").Wait(DEFAULT_TIMEOUT)
 			Expect(marketplace).To(Exit(0))
@@ -77,12 +87,6 @@ var _ = Describe("Purging service offerings", func() {
 			marketplace = cf.Cf("marketplace").Wait(DEFAULT_TIMEOUT)
 			Expect(marketplace).To(Exit(0))
 			Expect(marketplace).NotTo(Say(broker.Service.Name))
-		})
-
-		AfterEach(func() {
-			app_helpers.AppReport(appName, DEFAULT_TIMEOUT)
-
-			Expect(cf.Cf("delete", appName, "-f", "-r").Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 		})
 	})
 })
