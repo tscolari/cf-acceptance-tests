@@ -15,7 +15,7 @@ import (
 	. "github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("v3 tasks", func() {
+var _ = XDescribe("v3 tasks", func() {
 	config := helpers.LoadConfig()
 	if config.IncludeTasks {
 		Context("tasks lifecycle", func() {

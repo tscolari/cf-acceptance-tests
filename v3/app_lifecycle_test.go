@@ -16,7 +16,7 @@ import (
 	. "github.com/onsi/gomega/gbytes"
 )
 
-var _ = Describe("v3 buildpack app lifecycle", func() {
+var _ = XDescribe("v3 buildpack app lifecycle", func() {
 	var (
 		appName                         string
 		appGuid                         string

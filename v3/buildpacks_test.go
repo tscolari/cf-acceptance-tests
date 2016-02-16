@@ -34,7 +34,9 @@ var _ = Describe("buildpack", func() {
 		appName = generator.PrefixedRandomName("CATS-APP-")
 		spaceGuid = GetSpaceGuidFromName(context.RegularUserContext().Space)
 		appGuid = CreateApp(appName, spaceGuid, "{}")
+		fmt.Println("APPGUID", appGuid)
 		packageGuid = CreatePackage(appGuid)
+		fmt.Println("packageGuid", packageGuid)
 		token = GetAuthToken()
 		uploadUrl := fmt.Sprintf("%s/v3/packages/%s/upload", config.ApiEndpoint, packageGuid)
 		UploadPackage(uploadUrl, assets.NewAssets().DoraZip, token)
@@ -57,10 +59,12 @@ var _ = Describe("buildpack", func() {
 		DeleteApp(appGuid)
 	})
 
-	It("Stages with a user specified admin buildpack", func() {
+	FIt("Stages with a user specified admin buildpack", func() {
 		StagePackage(packageGuid, fmt.Sprintf(`{"lifecycle":{ "type": "buildpack", "data": { "buildpack": "%s" } }}`, buildpackName))
 
-		logUrl := fmt.Sprintf("loggregator.%s/recent?app=%s", config.AppsDomain, appGuid)
+		// logUrl := fmt.Sprintf("%s/recent?app=%s", loggregator_helpers.GetCfHomeConfig().LoggregatorEndpoint, appGuid)
+		logUrl := fmt.Sprintf("loggregator.%s/recent?app=%s", "xena.cf-app.com", appGuid)
+		fmt.Println("LOGURL ~~~~", logUrl)
 		Eventually(func() *Session {
 			session := runner.Curl(logUrl, "-H", fmt.Sprintf("Authorization: %s", token))
 			Expect(session.Wait(DEFAULT_TIMEOUT)).To(Exit(0))
@@ -71,7 +75,8 @@ var _ = Describe("buildpack", func() {
 	It("Stages with a user specified github buildpack", func() {
 		StagePackage(packageGuid, `{"lifecycle":{ "type": "buildpack", "data": { "buildpack": "http://github.com/cloudfoundry/go-buildpack" } }`)
 
-		logUrl := fmt.Sprintf("loggregator.%s/recent?app=%s", config.AppsDomain, appGuid)
+		// logUrl := fmt.Sprintf("%s/recent?app=%s", loggregator_helpers.GetCfHomeConfig().LoggregatorEndpoint, appGuid)
+		logUrl := fmt.Sprintf("loggregator.%s/recent?app=%s", "xena.cf-app.com", appGuid)
 		Eventually(func() *Session {
 			session := runner.Curl(logUrl, "-H", fmt.Sprintf("Authorization: %s", token))
 			Expect(session.Wait(DEFAULT_TIMEOUT)).To(Exit(0))

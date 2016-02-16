@@ -21,7 +21,7 @@ type ProcessStats struct {
 	} `json:"0"`
 }
 
-var _ = Describe("process", func() {
+var _ = XDescribe("process", func() {
 	var (
 		appName     string
 		appGuid     string

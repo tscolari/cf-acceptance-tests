@@ -17,21 +17,21 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gexec"
 	. "github.com/onsi/gomega/gbytes"
+	. "github.com/onsi/gomega/gexec"
 
 	archive_helpers "github.com/pivotal-golang/archiver/extractor/test_helper"
 )
 
-var _ = Describe("service bindings", func() {
+var _ = XDescribe("service bindings", func() {
 	var (
-		appName       string
-		spaceGuid     string
-		appGuid       string
-		packageGuid   string
-		token         string
-		upsName       string
-		upsGuid       string
+		appName     string
+		spaceGuid   string
+		appGuid     string
+		packageGuid string
+		token       string
+		upsName     string
+		upsGuid     string
 	)
 
 	BeforeEach(func() {
