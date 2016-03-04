@@ -67,13 +67,13 @@ func GenerateAppName() string {
 }
 
 func PushAppNoStart(appName, asset, buildpackName, domain string, timeout time.Duration, args ...string) {
-	Expect(cf.Cf("push", appName,
+	Expect(cf.Cf(append([]string{"push", appName,
 		"-b", buildpackName,
 		"--no-start",
 		"-m", DEFAULT_MEMORY_LIMIT,
 		"-p", asset,
-		"-d", domain,
-		args...,
+		"-d", domain},
+	  args...)...,
 	).Wait(timeout)).To(Exit(0))
 }
 
@@ -140,13 +140,13 @@ func GetAppInfo(appName string, timeout time.Duration) (host, port string) {
 	return appIp, appPort
 }
 
-func GetAppGuid(appName string) string {
+func GetAppGuid(appName string, timeout time.Duration) string {
 	cfResponse := cf.Cf("app", appName, "--guid").Wait(timeout).Out.Contents()
-	return cfResponse
+	return string(cfResponse)
 }
 
-func UpdatePorts(appName string, ports []uint32) {
-	appGuid := GetAppGuid(appName)
+func UpdatePorts(appName string, ports []uint32, timeout time.Duration) {
+	appGuid := GetAppGuid(appName, timeout)
 
 	bodyMap := map[string][]uint32{
 		"ports": ports,
