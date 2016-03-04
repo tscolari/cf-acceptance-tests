@@ -66,13 +66,14 @@ func GenerateAppName() string {
 	return generator.PrefixedRandomName("RATS-APP-")
 }
 
-func PushAppNoStart(appName, asset, buildpackName, domain string, timeout time.Duration) {
+func PushAppNoStart(appName, asset, buildpackName, domain string, timeout time.Duration, args ...string) {
 	Expect(cf.Cf("push", appName,
 		"-b", buildpackName,
 		"--no-start",
 		"-m", DEFAULT_MEMORY_LIMIT,
 		"-p", asset,
 		"-d", domain,
+		args...,
 	).Wait(timeout)).To(Exit(0))
 }
 
@@ -137,4 +138,21 @@ func GetAppInfo(appName string, timeout time.Duration) (host, port string) {
 	appIp := statsResponse["0"].Stats.Host
 	appPort := fmt.Sprintf("%d", statsResponse["0"].Stats.Port)
 	return appIp, appPort
+}
+
+func GetAppGuid(appName string) string {
+	cfResponse := cf.Cf("app", appName, "--guid").Wait(timeout).Out.Contents()
+	return cfResponse
+}
+
+func UpdatePorts(appName string, ports []uint32) {
+	appGuid := GetAppGuid(appName)
+
+	bodyMap := map[string][]uint32{
+		"ports": ports,
+	}
+
+	body, err := json.Marshal(bodyMap)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(cf.Cf("curl", fmt.Sprintf("/v2/apps/%s", appGuid), "-X", "-PUT", "-d", string(body))).To(Exit(0))
 }
