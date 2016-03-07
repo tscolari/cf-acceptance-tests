@@ -2,6 +2,7 @@ package routing
 
 import (
 	"fmt"
+
 	"github.com/cloudfoundry/cf-acceptance-tests/Godeps/_workspace/src/github.com/cloudfoundry-incubator/cf-test-helpers/helpers"
 	. "github.com/cloudfoundry/cf-acceptance-tests/Godeps/_workspace/src/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/cf-acceptance-tests/Godeps/_workspace/src/github.com/onsi/gomega"
@@ -13,15 +14,18 @@ import (
 var _ = Describe(deaUnsupportedTag+"Multiple App Ports", func() {
 	var (
 		app             string
+		secondRoute     string
 		latticeAppAsset = assets.NewAssets().LatticeApp
 	)
 
 	BeforeEach(func() {
 		app = GenerateAppName()
-		cmd := fmt.Sprintf("-c \"%s --ports=7777,8888\"", app)
-		PushAppNoStart(app, latticeAppAsset, config.GoBuildpackName, config.AppsDomain, CF_PUSH_TIMEOUT, cmd)
-		UpdatePorts(app, []uint32{7777, 8888}, DEFAULT_TIMEOUT)
+		cmd := fmt.Sprintf("%s --ports=7777,8080", "lattice-app")
+
+		// will creates a route for default port 8080
+		PushAppNoStart(app, latticeAppAsset, config.GoBuildpackName, config.AppsDomain, CF_PUSH_TIMEOUT, "-c", cmd)
 		app_helpers.EnableDiego(app)
+		UpdatePorts(app, []uint32{7777, 8080}, DEFAULT_TIMEOUT)
 		StartApp(app, DEFAULT_TIMEOUT)
 	})
 
@@ -30,11 +34,48 @@ var _ = Describe(deaUnsupportedTag+"Multiple App Ports", func() {
 		DeleteApp(app, DEFAULT_TIMEOUT)
 	})
 
-	FContext("when app has multiple ports", func() {
-		It("should listen on first port", func() {
+	Context("when app only has single route", func() {
+		It("should listen on the default app port", func() {
 			Eventually(func() string {
 				return helpers.CurlApp(app, "/port")
+			}, DEFAULT_TIMEOUT).Should(ContainSubstring("8080"))
+		})
+	})
+
+	Context("when app has multiple ports mapped", func() {
+		BeforeEach(func() {
+			// create 2nd route
+			domain := config.AppsDomain
+			spacename := context.RegularUserContext().Space
+			secondRoute = fmt.Sprintf("%s-two", app)
+			CreateRoute(secondRoute, "", spacename, domain, DEFAULT_TIMEOUT)
+
+			// map app route to other port
+			CreateRouteMapping(app, secondRoute, 7777, DEFAULT_TIMEOUT)
+		})
+
+		It("should listen on multiple ports", func() {
+			Eventually(func() string {
+				return helpers.CurlApp(app, "/port")
+			}, DEFAULT_TIMEOUT).Should(ContainSubstring("8080"))
+
+			Eventually(func() string {
+				return helpers.CurlApp(secondRoute, "/port")
 			}, DEFAULT_TIMEOUT).Should(ContainSubstring("7777"))
 		})
+
+		Context("when switching from Diego to DEA", func() {
+
+			It("should receive an error", func() {
+				// WIP: resume from here...
+				// var errResp ErrorResponse
+				// appGuid := GetAppGuid(app, DEFAULT_TIMEOUT)
+				// cfResp := cf.Cf("curl", "/v2/apps/"+appGuid, "-X", "PUT", "-d", `{"diego": false}`).Wait(DEFAULT_TIMEOUT).Out.Contents()
+				// err := json.Unmarshal(cfResp, &errResp)
+				// Expect(err).NotTo(HaveOccurred())
+				// Expect(errResp.Code).To(Equal(60024))
+			})
+		})
+
 	})
 })

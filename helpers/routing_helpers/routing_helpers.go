@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	. "github.com/cloudfoundry/cf-acceptance-tests/Godeps/_workspace/src/github.com/onsi/gomega"
@@ -48,6 +49,12 @@ type Stat struct {
 }
 type StatsResponse map[string]Stat
 
+type ErrorResponse struct {
+	Code        int
+	Description string
+	ErrorCode   string
+}
+
 func RestartApp(app string, timeout time.Duration) {
 	Expect(cf.Cf("restart", app).Wait(timeout)).To(Exit(0))
 }
@@ -67,14 +74,16 @@ func GenerateAppName() string {
 }
 
 func PushAppNoStart(appName, asset, buildpackName, domain string, timeout time.Duration, args ...string) {
-	Expect(cf.Cf(append([]string{"push", appName,
+	allArgs := []string{"push", appName,
 		"-b", buildpackName,
 		"--no-start",
 		"-m", DEFAULT_MEMORY_LIMIT,
 		"-p", asset,
-		"-d", domain},
-	  args...)...,
-	).Wait(timeout)).To(Exit(0))
+		"-d", domain}
+	for _, v := range args {
+		allArgs = append(allArgs, v)
+	}
+	Expect(cf.Cf(allArgs...).Wait(timeout)).To(Exit(0))
 }
 
 func ScaleAppInstances(appName string, instances int, timeout time.Duration) {
@@ -142,7 +151,7 @@ func GetAppInfo(appName string, timeout time.Duration) (host, port string) {
 
 func GetAppGuid(appName string, timeout time.Duration) string {
 	cfResponse := cf.Cf("app", appName, "--guid").Wait(timeout).Out.Contents()
-	return string(cfResponse)
+	return strings.Replace(string(cfResponse), "\n", "", -1)
 }
 
 func UpdatePorts(appName string, ports []uint32, timeout time.Duration) {
@@ -152,7 +161,26 @@ func UpdatePorts(appName string, ports []uint32, timeout time.Duration) {
 		"ports": ports,
 	}
 
-	body, err := json.Marshal(bodyMap)
+	data, err := json.Marshal(bodyMap)
 	Expect(err).ToNot(HaveOccurred())
-	Expect(cf.Cf("curl", fmt.Sprintf("/v2/apps/%s", appGuid), "-X", "-PUT", "-d", string(body))).To(Exit(0))
+	body := fmt.Sprintf("'%s'", string(data))
+
+	Expect(cf.Cf("curl", fmt.Sprintf("/v2/apps/%s", appGuid), "-X", "PUT", "-d", body).Wait(timeout)).To(Exit(0))
+}
+
+func CreateRouteMapping(appName string, hostname string, port uint32, timeout time.Duration) {
+	appGuid := GetAppGuid(appName, timeout)
+	routeGuid := GetRouteGuid(hostname, "", timeout)
+
+	bodyMap := map[string]interface{}{
+		"app_guid":   appGuid,
+		"route_guid": routeGuid,
+		"app_port":   port,
+	}
+
+	data, err := json.Marshal(bodyMap)
+	Expect(err).ToNot(HaveOccurred())
+	body := fmt.Sprintf("'%s'", string(data))
+
+	Expect(cf.Cf("curl", fmt.Sprintf("/v2/route_mappings"), "-X", "POST", "-d", body).Wait(timeout)).To(Exit(0))
 }
