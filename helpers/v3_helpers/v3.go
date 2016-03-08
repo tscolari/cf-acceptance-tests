@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/cloudfoundry/cf-acceptance-tests/Godeps/_workspace/src/github.com/cloudfoundry-incubator/cf-test-helpers/cf"
 	"github.com/cloudfoundry/cf-acceptance-tests/Godeps/_workspace/src/github.com/cloudfoundry-incubator/cf-test-helpers/helpers"
@@ -174,4 +175,9 @@ func ScaleProcess(appGuid, processType, memoryInMb string) {
 	scalePath := fmt.Sprintf("/v3/apps/%s/processes/%s/scale", appGuid, processType)
 	scaleBody := fmt.Sprintf(`{"memory_in_mb":"%s"}`, memoryInMb)
 	Expect(cf.Cf("curl", scalePath, "-X", "PUT", "-d", scaleBody).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+}
+
+func AppReport(appGuid string, logs string, timeout time.Duration) {
+	fmt.Printf("App GUID: %s", appGuid)
+	fmt.Printf("App Logs:\n%s", logs)
 }

@@ -22,6 +22,7 @@ var _ = Describe("v3 buildpack app lifecycle", func() {
 		packageGuid                     string
 		spaceGuid                       string
 		appCreationEnvironmentVariables string
+		token                           string
 	)
 
 	BeforeEach(func() {
@@ -30,14 +31,14 @@ var _ = Describe("v3 buildpack app lifecycle", func() {
 		appCreationEnvironmentVariables = `"foo"=>"bar"`
 		appGuid = CreateApp(appName, spaceGuid, `{"foo":"bar"}`)
 		packageGuid = CreatePackage(appGuid)
-		token := GetAuthToken()
+		token = GetAuthToken()
 		uploadUrl := fmt.Sprintf("%s/v3/packages/%s/upload", config.ApiEndpoint, packageGuid)
 		UploadPackage(uploadUrl, assets.NewAssets().DoraZip, token)
 		WaitForPackageToBeReady(packageGuid)
 	})
 
 	AfterEach(func() {
-		app_helpers.AppReport(appName, DEFAULT_TIMEOUT)
+		AppReport(appGuid, string(FetchRecentLogs(appGuid, token, config).Out.Contents()),  DEFAULT_TIMEOUT)
 		DeleteApp(appGuid)
 	})
 
