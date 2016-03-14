@@ -3,6 +3,7 @@ package routing
 import (
 	"fmt"
 
+	"github.com/cloudfoundry-incubator/cf-test-helpers/cf"
 	. "github.com/cloudfoundry/cf-acceptance-tests/Godeps/_workspace/src/github.com/cloudfoundry-incubator/cf-routing-test-helpers/helpers"
 	"github.com/cloudfoundry/cf-acceptance-tests/Godeps/_workspace/src/github.com/cloudfoundry-incubator/cf-test-helpers/helpers"
 	. "github.com/cloudfoundry/cf-acceptance-tests/Godeps/_workspace/src/github.com/onsi/ginkgo"
@@ -64,7 +65,8 @@ var _ = Describe(deaUnsupportedTag+"Multiple App Ports", func() {
 		})
 
 		It("returns an error when switching from Diego to DEA", func() {
-			DisableDiegoAndCheckResponse(app, "CF-MultipleAppPortsMappedDiegoToDea", DEFAULT_TIMEOUT)
+			_ = cf.Cf("curl", "/v2/apps/123", "-X", "PUT", "-d", `{"diego": false}`).Wait(DEFAULT_TIMEOUT).Out.Contents()
+			// DisableDiegoAndCheckResponse(app, "CF-MultipleAppPortsMappedDiegoToDea", DEFAULT_TIMEOUT)
 		})
 	})
 })
