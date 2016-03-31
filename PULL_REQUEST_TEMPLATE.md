@@ -8,4 +8,4 @@ Thanks for contributing to the `cf-acceptance-tests`. To speed up the process of
 
 * [ ] I have made this pull request to the `master` branch
 
-* [ ] I have run these tests of bosh-lite 
+* [ ] I have successfully run these tests against bosh-lite 
