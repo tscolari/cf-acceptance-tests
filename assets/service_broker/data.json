@@ -25,7 +25,8 @@
               "relational"
             ],
             "requires": [
-              "route_forwarding"
+              "route_forwarding",
+              "volume_mount"
             ],
             "max_db_per_node": 5,
             "bindable": true,
@@ -185,7 +186,18 @@
             "host": "fake-host",
             "port": 3306,
             "database": "fake-dbname"
-          }
+          },
+          "volume_mounts": [
+            {
+              "public": "data",
+              "private": {
+                "secret": "data"
+              }
+            },
+            {
+              "second": "volume"
+            }
+          ]
         }
       }
     },
