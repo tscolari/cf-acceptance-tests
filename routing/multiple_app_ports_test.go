@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	. "github.com/cloudfoundry-incubator/cf-routing-test-helpers/helpers"
+	"github.com/cloudfoundry-incubator/cf-test-helpers/cf"
 	"github.com/cloudfoundry-incubator/cf-test-helpers/helpers"
+	"github.com/cloudfoundry/cf-acceptance-tests/helpers/assets"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/cloudfoundry/cf-acceptance-tests/helpers/assets"
 )
 
 var _ = Describe(deaUnsupportedTag+"Multiple App Ports", func() {
@@ -44,6 +45,11 @@ var _ = Describe(deaUnsupportedTag+"Multiple App Ports", func() {
 	Context("when app has multiple ports mapped", func() {
 		BeforeEach(func() {
 			UpdatePorts(app, []uint16{7777, 8888, 8080}, DEFAULT_TIMEOUT)
+			Eventually(func() string {
+				cfApp := cf.Cf("app", app).Wait(DEFAULT_TIMEOUT)
+				return string(cfApp.Out.Contents())
+			}, DEFAULT_TIMEOUT, "5s").Should(ContainSubstring("started"))
+
 			// create 2nd route
 			spacename := context.RegularUserContext().Space
 			secondRoute = fmt.Sprintf("%s-two", app)
