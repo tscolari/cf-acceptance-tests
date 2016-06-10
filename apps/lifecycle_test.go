@@ -140,10 +140,15 @@ var _ = Describe("Application Lifecycle", func() {
 			It("is able to start all instances", func() {
 				Expect(cf.Cf("start", appName).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
 
-				app := cf.Cf("app", appName).Wait(DEFAULT_TIMEOUT)
-				Expect(app).To(Exit(0))
-				Eventually(app, DEFAULT_TIMEOUT).Should(Say("#0   running"))
-				Eventually(app, DEFAULT_TIMEOUT).Should(Say("#1   running"))
+				retryTimeout := 3 * DEFAULT_TIMEOUT
+
+				Eventually(func() *Session {
+					return cf.Cf("app", appName).Wait(DEFAULT_TIMEOUT)
+				}, retryTimeout).Should(Say("#0   running"))
+
+				Eventually(func() *Session {
+					return cf.Cf("app", appName).Wait(DEFAULT_TIMEOUT)
+				}, retryTimeout).Should(Say("#1   running"))
 			})
 		})
 
